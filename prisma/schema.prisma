@@ -1,0 +1,59 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  password      String?
+  role          String    @default("student") // 'student' | 'faculty' | 'admin'
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Academic Relations
+  attendance    Attendance[]
+  grades        Grade[]
+  requests      ServiceRequest[]
+}
+
+model Attendance {
+  id        String   @id @default(cuid())
+  studentId String
+  student   User     @relation(fields: [studentId], references: [id])
+  date      DateTime @default(now())
+  status    String   // 'Present', 'Absent', 'Late'
+  courseId  String
+  session   Int?     // Period number (1-7)
+}
+
+model Grade {
+  id        String   @id @default(cuid())
+  studentId String
+  student   User     @relation(fields: [studentId], references: [id])
+  courseId  String
+  type      String   // 'midterm', 'final', 'assignment'
+  score     Float
+  maxScore  Float    @default(100)
+  gradedAt  DateTime @default(now())
+}
+
+model ServiceRequest {
+  id          String   @id @default(cuid())
+  requesterId String
+  requester   User     @relation(fields: [requesterId], references: [id])
+  type        String   // 'bonafide', 'duty_leave', etc.
+  recipient   String   // 'principal', 'hod', 'email@test.com'
+  details     String   @db.Text
+  status      String   @default("pending") // 'pending', 'approved', 'rejected'
+  createdAt   DateTime @default(now())
+}
